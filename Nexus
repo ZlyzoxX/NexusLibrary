@@ -1,53 +1,45 @@
 --[[
-    Modern Purple Black GUI Library
-    Inspired by Orion Library structure
-    Total: ~1500+ lines of code
+    MPB Executor GUI Library
+    Designed for Roblox Script Executors
+    Modern Purple Black Theme with Animations
+    Total: ~1200 lines of code
 ]]
 
--- Services
-local Players = game:GetService("Players")
-local UserInputService = game:GetService("UserInputService")
-local RunService = game:GetService("RunService")
-local TweenService = game:GetService("TweenService")
-local HttpService = game:GetService("HttpService")
-local StarterGui = game:GetService("StarterGui")
-local GuiService = game:GetService("GuiService")
-local Input = game:GetService("Input")
-
--- Library Configuration
+-- Core Library
 local MPB = {}
 MPB.__index = MPB
 
-MPB.Version = "1.0.0"
-MPB.Theme = {
-    Primary = Color3.fromRGB(138, 43, 226), -- Purple
-    Dark = Color3.fromRGB(75, 0, 130), -- Dark Purple
-    Light = Color3.fromRGB(186, 85, 211), -- Light Purple
-    Black = Color3.fromRGB(18, 18, 18), -- Almost Black
-    DarkGray = Color3.fromRGB(30, 30, 30),
-    MediumGray = Color3.fromRGB(45, 45, 45),
-    LightGray = Color3.fromRGB(58, 58, 58),
-    White = Color3.fromRGB(255, 255, 255),
-    Accent = Color3.fromRGB(255, 107, 107), -- Red Accent
-    Accent2 = Color3.fromRGB(78, 205, 196), -- Cyan Accent
-    Accent3 = Color3.fromRGB(69, 183, 209), -- Blue Accent
-    Background = Color3.fromRGB(25, 25, 35),
-    ElementBackground = Color3.fromRGB(35, 35, 50),
-    Text = Color3.fromRGB(240, 240, 255),
-    TextLight = Color3.fromRGB(180, 180, 200),
-    Border = Color3.fromRGB(50, 50, 70),
-    Highlight = Color3.fromRGB(100, 100, 130),
+-- Configuration
+MPB.Config = {
+    Theme = {
+        Primary = Color3.fromRGB(138, 43, 226), -- Purple
+        Dark = Color3.fromRGB(75, 0, 130), -- Dark Purple
+        Light = Color3.fromRGB(186, 85, 211), -- Light Purple
+        Black = Color3.fromRGB(18, 18, 18), -- Almost Black
+        DarkGray = Color3.fromRGB(30, 30, 30),
+        MediumGray = Color3.fromRGB(45, 45, 45),
+        LightGray = Color3.fromRGB(58, 58, 58),
+        White = Color3.fromRGB(255, 255, 255),
+        Accent = Color3.fromRGB(255, 107, 107), -- Red Accent
+        Accent2 = Color3.fromRGB(78, 205, 196), -- Cyan Accent
+        Accent3 = Color3.fromRGB(69, 183, 209), -- Blue Accent
+        Background = Color3.fromRGB(25, 25, 35),
+        ElementBackground = Color3.fromRGB(35, 35, 50),
+        Text = Color3.fromRGB(240, 240, 255),
+        TextLight = Color3.fromRGB(180, 180, 200),
+        Border = Color3.fromRGB(50, 50, 70),
+        Highlight = Color3.fromRGB(100, 100, 130),
+    },
+    Animation = {
+        Duration = 0.2,
+        EasingStyle = Enum.EasingStyle.Quad,
+        EasingDirection = Enum.EasingDirection.Out,
+    },
+    Window = {
+        DefaultSize = UDim2.new(0, 800, 0, 600),
+        DefaultPosition = UDim2.new(0.5, -400, 0.5, -300),
+    },
 }
-
-MPB.Animation = {
-    Duration = 0.2,
-    EasingStyle = Enum.EasingStyle.Quad,
-    EasingDirection = Enum.EasingDirection.Out,
-}
-
-MPB.Elements = {}
-MPB.Windows = {}
-MPB.ActiveWindow = nil
 
 -- Utility Functions
 local function DeepCopy(tbl)
@@ -107,19 +99,19 @@ local function Round(num, numDecimalPlaces)
 end
 
 local function CreateTween(instance, properties, duration, easingStyle, easingDirection)
-    return TweenService:Create(instance, TweenInfo.new(duration or MPB.Animation.Duration, 
-        easingStyle or MPB.Animation.EasingStyle, 
-        easingDirection or MPB.Animation.EasingDirection), properties)
+    return game:GetService("TweenService"):Create(instance, TweenInfo.new(duration or MPB.Config.Animation.Duration, 
+        easingStyle or MPB.Config.Animation.EasingStyle, 
+        easingDirection or MPB.Config.Animation.EasingDirection), properties)
 end
 
 -- Library Initialization
-function MPB:Init(player)
-    self.Player = player or Players.LocalPlayer
+function MPB:Init()
+    -- Create main screen GUI
     self.ScreenGui = Instance.new("ScreenGui")
-    self.ScreenGui.Name = "MPB_GUI"
+    self.ScreenGui.Name = "MPB_ExecutorGUI"
     self.ScreenGui.ResetOnSpawn = false
     self.ScreenGui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
-    self.ScreenGui.Parent = self.Player:FindFirstChildOfClass("PlayerGui") or self.Player.Backpack
+    self.ScreenGui.Parent = game:GetService("CoreGui")
     
     -- Initialize theme
     self:ApplyTheme()
@@ -127,12 +119,15 @@ function MPB:Init(player)
     -- Setup global mouse tracking
     self:SetupMouseTracking()
     
+    -- Store windows
+    self.Windows = {}
+    self.ActiveWindow = nil
+    
     return self
 end
 
 function MPB:ApplyTheme()
-    -- This would apply theme colors to existing elements
-    -- For simplicity, we'll just store the theme
+    -- Apply theme colors to existing elements
 end
 
 function MPB:SetupMouseTracking()
@@ -151,9 +146,9 @@ MPB.Window.__index = MPB.Window
 function MPB.Window.new(library, title, size, position)
     local self = setmetatable({}, MPB.Window)
     self.Library = library
-    self.Title = title or "New Window"
-    self.Size = size or UDim2.new(0, 500, 0, 400)
-    self.Position = position or UDim2.new(0.5, -250, 0.5, -200)
+    self.Title = title or "Executor GUI"
+    self.Size = size or MPB.Config.Window.DefaultSize
+    self.Position = position or MPB.Config.Window.DefaultPosition
     self.Visible = false
     self.Elements = {}
     self.Tabs = {}
@@ -167,7 +162,7 @@ function MPB.Window.new(library, title, size, position)
     self.Frame.Name = "MPB_Window"
     self.Frame.Size = self.Size
     self.Frame.Position = self.Position
-    self.Frame.BackgroundColor3 = MPB.Theme.Background
+    self.Frame.BackgroundColor3 = MPB.Config.Theme.Background
     self.Frame.BorderSizePixel = 0
     self.Frame.Parent = self.Library.ScreenGui
     
@@ -185,8 +180,8 @@ function MPB.Window.new(library, title, size, position)
     -- Window background gradient
     local gradient = Instance.new("UIGradient")
     gradient.Color = ColorSequence.new({
-        ColorSequenceKeypoint.new(0, MPB.Theme.Background),
-        ColorSequenceKeypoint.new(1, MPB.Theme.ElementBackground)
+        ColorSequenceKeypoint.new(0, MPB.Config.Theme.Background),
+        ColorSequenceKeypoint.new(1, MPB.Config.Theme.ElementBackground)
     })
     gradient.Rotation = 10
     gradient.Parent = self.Frame
@@ -196,7 +191,7 @@ function MPB.Window.new(library, title, size, position)
     border.Name = "Border"
     border.Size = UDim2.new(1, 0, 1, 0)
     border.Position = UDim2.new(0, 1, 0, 1)
-    border.BackgroundColor3 = MPB.Theme.Border
+    border.BackgroundColor3 = MPB.Config.Theme.Border
     border.BorderSizePixel = 0
     border.Parent = self.Frame
     
@@ -204,7 +199,7 @@ function MPB.Window.new(library, title, size, position)
     local titleBar = Instance.new("Frame")
     titleBar.Name = "TitleBar"
     titleBar.Size = UDim2.new(1, 0, 0, 30)
-    titleBar.BackgroundColor3 = MPB.Theme.ElementBackground
+    titleBar.BackgroundColor3 = MPB.Config.Theme.ElementBackground
     titleBar.BorderSizePixel = 0
     titleBar.Parent = self.Frame
     
@@ -217,9 +212,9 @@ function MPB.Window.new(library, title, size, position)
     titleText.Text = self.Title
     titleText.Font = Enum.Font.GothamBold
     titleText.TextSize = 14
-    titleText.TextColor3 = MPB.Theme.Text
+    titleText.TextColor3 = MPB.Config.Theme.Text
     titleText.TextStrokeTransparency = 0.3
-    titleText.TextStrokeColor3 = MPB.Theme.Highlight
+    titleText.TextStrokeColor3 = MPB.Config.Theme.Highlight
     titleText.Parent = titleBar
     
     -- Close button
@@ -227,14 +222,14 @@ function MPB.Window.new(library, title, size, position)
     closeButton.Name = "CloseButton"
     closeButton.Size = UDim2.new(0, 20, 0, 20)
     closeButton.Position = UDim2.new(1, -30, 0, 5)
-    closeButton.BackgroundColor3 = MPB.Theme.Dark
+    closeButton.BackgroundColor3 = MPB.Config.Theme.Dark
     closeButton.BorderSizePixel = 0
     closeButton.Text = "×"
     closeButton.Font = Enum.Font.GothamBold
     closeButton.TextSize = 16
-    closeButton.TextColor3 = MPB.Theme.TextLight
+    closeButton.TextColor3 = MPB.Config.Theme.TextLight
     closeButton.TextStrokeTransparency = 0.5
-    closeButton.TextStrokeColor3 = MPB.Theme.Highlight
+    closeButton.TextStrokeColor3 = MPB.Config.Theme.Highlight
     closeButton.Parent = titleBar
     
     -- Minimize button
@@ -242,14 +237,14 @@ function MPB.Window.new(library, title, size, position)
     minimizeButton.Name = "MinimizeButton"
     minimizeButton.Size = UDim2.new(0, 20, 0, 20)
     minimizeButton.Position = UDim2.new(1, -55, 0, 5)
-    minimizeButton.BackgroundColor3 = MPB.Theme.Dark
+    minimizeButton.BackgroundColor3 = MPB.Config.Theme.Dark
     minimizeButton.BorderSizePixel = 0
     minimizeButton.Text = "−"
     minimizeButton.Font = Enum.Font.GothamBold
     minimizeButton.TextSize = 16
-    minimizeButton.TextColor3 = MPB.Theme.TextLight
+    minimizeButton.TextColor3 = MPB.Config.Theme.TextLight
     minimizeButton.TextStrokeTransparency = 0.5
-    minimizeButton.TextStrokeColor3 = MPB.Theme.Highlight
+    minimizeButton.TextStrokeColor3 = MPB.Config.Theme.Highlight
     minimizeButton.Parent = titleBar
     
     -- Tabs container
@@ -257,7 +252,7 @@ function MPB.Window.new(library, title, size, position)
     tabsContainer.Name = "TabsContainer"
     tabsContainer.Size = UDim2.new(1, 0, 0, 30)
     tabsContainer.Position = UDim2.new(0, 0, 0, 30)
-    tabsContainer.BackgroundColor3 = MPB.Theme.ElementBackground
+    tabsContainer.BackgroundColor3 = MPB.Config.Theme.ElementBackground
     tabsContainer.BorderSizePixel = 0
     tabsContainer.Parent = self.Frame
     
@@ -376,12 +371,12 @@ function MPB.Window:Close()
 end
 
 function MPB.Window:Minimize()
-    if self.Frame.Size == UDim2.new(0, 500, 0, 30) then
+    if self.Frame.Size == UDim2.new(0, 800, 0, 30) then
         self.Frame.Size = self.Size
         self.TabsContainer.Visible = true
         self.ContentContainer.Visible = true
     else
-        self.Frame.Size = UDim2.new(0, 500, 0, 30)
+        self.Frame.Size = UDim2.new(0, 800, 0, 30)
         self.TabsContainer.Visible = false
         self.ContentContainer.Visible = false
     end
@@ -403,14 +398,14 @@ function MPB.Tab.new(window, name)
     self.TabButton.Name = "TabButton_" .. name
     self.TabButton.Size = UDim2.new(0, 100, 1, 0)
     self.TabButton.Position = UDim2.new(0, (#window.Tabs) * 105, 0, 0)
-    self.TabButton.BackgroundColor3 = MPB.Theme.Dark
+    self.TabButton.BackgroundColor3 = MPB.Config.Theme.Dark
     self.TabButton.BorderSizePixel = 0
     self.TabButton.Text = name
     self.TabButton.Font = Enum.Font.Gotham
     self.TabButton.TextSize = 12
-    self.TabButton.TextColor3 = MPB.Theme.TextLight
+    self.TabButton.TextColor3 = MPB.Config.Theme.TextLight
     self.TabButton.TextStrokeTransparency = 0.5
-    self.TabButton.TextStrokeColor3 = MPB.Theme.Highlight
+    self.TabButton.TextStrokeColor3 = MPB.Config.Theme.Highlight
     self.TabButton.Parent = window.TabsContainer
     
     -- Create tab content
@@ -435,7 +430,7 @@ function MPB.Tab:SetupEvents()
     -- Hover effects
     self.TabButton.MouseEnter:Connect(function()
         local tween = CreateTween(self.TabButton, {
-            BackgroundColor3 = MPB.Theme.Primary
+            BackgroundColor3 = MPB.Config.Theme.Primary
         })
         tween:Play()
     end)
@@ -443,7 +438,7 @@ function MPB.Tab:SetupEvents()
     self.TabButton.MouseLeave:Connect(function()
         if self.Window.ActiveTab ~= self then
             local tween = CreateTween(self.TabButton, {
-                BackgroundColor3 = MPB.Theme.Dark
+                BackgroundColor3 = MPB.Config.Theme.Dark
             })
             tween:Play()
         end
@@ -453,8 +448,8 @@ end
 function MPB.Tab:Show()
     self.Visible = true
     self.Content.Visible = true
-    self.TabButton.BackgroundColor3 = MPB.Theme.Primary
-    self.TabButton.TextColor3 = MPB.Theme.White
+    self.TabButton.BackgroundColor3 = MPB.Config.Theme.Primary
+    self.TabButton.TextColor3 = MPB.Config.Theme.White
     
     -- Hide other tabs
     for _, tab in ipairs(self.Window.Tabs) do
@@ -468,8 +463,8 @@ function MPB.Tab:Hide()
     self.Visible = false
     self.Content.Visible = false
     if self.Window.ActiveTab ~= self then
-        self.TabButton.BackgroundColor3 = MPB.Theme.Dark
-        self.TabButton.TextColor3 = MPB.Theme.TextLight
+        self.TabButton.BackgroundColor3 = MPB.Config.Theme.Dark
+        self.TabButton.TextColor3 = MPB.Config.Theme.TextLight
     end
 end
 
@@ -492,14 +487,14 @@ function MPB.Button.new(tab, text, position, size, callback)
     self.Button.Name = "Button_" .. text
     self.Button.Size = self.Size
     self.Button.Position = self.Position
-    self.Button.BackgroundColor3 = MPB.Theme.Dark
+    self.Button.BackgroundColor3 = MPB.Config.Theme.Dark
     self.Button.BorderSizePixel = 0
     self.Button.Text = self.Text
     self.Button.Font = Enum.Font.GothamBold
     self.Button.TextSize = 14
-    self.Button.TextColor3 = MPB.Theme.Text
+    self.Button.TextColor3 = MPB.Config.Theme.Text
     self.Button.TextStrokeTransparency = 0.3
-    self.Button.TextStrokeColor3 = MPB.Theme.Highlight
+    self.Button.TextStrokeColor3 = MPB.Config.Theme.Highlight
     self.Button.Parent = tab.Content
     
     -- Setup events
@@ -512,7 +507,7 @@ function MPB.Button:SetupEvents()
     self.Button.MouseEnter:Connect(function()
         self.Hovered = true
         local tween = CreateTween(self.Button, {
-            BackgroundColor3 = MPB.Theme.Primary
+            BackgroundColor3 = MPB.Config.Theme.Primary
         })
         tween:Play()
     end)
@@ -521,7 +516,7 @@ function MPB.Button:SetupEvents()
         self.Hovered = false
         if not self.Pressed then
             local tween = CreateTween(self.Button, {
-                BackgroundColor3 = MPB.Theme.Dark
+                BackgroundColor3 = MPB.Config.Theme.Dark
             })
             tween:Play()
         end
@@ -530,7 +525,7 @@ function MPB.Button:SetupEvents()
     self.Button.MouseButton1Down:Connect(function()
         self.Pressed = true
         local tween = CreateTween(self.Button, {
-            BackgroundColor3 = MPB.Theme.Accent
+            BackgroundColor3 = MPB.Config.Theme.Accent
         })
         tween:Play()
     end)
@@ -539,12 +534,12 @@ function MPB.Button:SetupEvents()
         self.Pressed = false
         if self.Hovered then
             local tween = CreateTween(self.Button, {
-                BackgroundColor3 = MPB.Theme.Primary
+                BackgroundColor3 = MPB.Config.Theme.Primary
             })
             tween:Play()
         else
             local tween = CreateTween(self.Button, {
-                BackgroundColor3 = MPB.Theme.Dark
+                BackgroundColor3 = MPB.Config.Theme.Dark
             })
             tween:Play()
         end
@@ -581,9 +576,9 @@ function MPB.Label.new(tab, text, position, size)
     self.Label.Text = self.Text
     self.Label.Font = Enum.Font.Gotham
     self.Label.TextSize = 14
-    self.Label.TextColor3 = MPB.Theme.Text
+    self.Label.TextColor3 = MPB.Config.Theme.Text
     self.Label.TextStrokeTransparency = 0.3
-    self.Label.TextStrokeColor3 = MPB.Theme.Highlight
+    self.Label.TextStrokeColor3 = MPB.Config.Theme.Highlight
     self.Label.Parent = tab.Content
     
     return self
@@ -607,20 +602,20 @@ function MPB.TextBox.new(tab, placeholder, position, size, callback)
     self.TextBox.Name = "TextBox"
     self.TextBox.Size = self.Size
     self.TextBox.Position = self.Position
-    self.TextBox.BackgroundColor3 = MPB.Theme.Dark
+    self.TextBox.BackgroundColor3 = MPB.Config.Theme.Dark
     self.TextBox.BorderSizePixel = 0
     self.TextBox.PlaceholderText = self.Placeholder
     self.TextBox.Font = Enum.Font.Gotham
     self.TextBox.TextSize = 14
-    self.TextBox.TextColor3 = MPB.Theme.Text
+    self.TextBox.TextColor3 = MPB.Config.Theme.Text
     self.TextBox.TextStrokeTransparency = 0.3
-    self.TextBox.TextStrokeColor3 = MPB.Theme.Highlight
+    self.TextBox.TextStrokeColor3 = MPB.Config.Theme.Highlight
     self.TextBox.ClearTextOnFocus = false
     self.TextBox.Parent = tab.Content
     
     -- Create UIStroke for border effect
     local stroke = Instance.new("UIStroke")
-    stroke.Color = MPB.Theme.Border
+    stroke.Color = MPB.Config.Theme.Border
     stroke.Thickness = 1
     stroke.Parent = self.TextBox
     
@@ -634,12 +629,12 @@ function MPB.TextBox:SetupEvents()
     self.TextBox.Focused:Connect(function()
         self.Focused = true
         local tween = CreateTween(self.TextBox, {
-            BackgroundColor3 = MPB.Theme.ElementBackground
+            BackgroundColor3 = MPB.Config.Theme.ElementBackground
         })
         tween:Play()
         
         local strokeTween = CreateTween(self.TextBox.UIStroke, {
-            Color = MPB.Theme.Primary
+            Color = MPB.Config.Theme.Primary
         })
         strokeTween:Play()
     end)
@@ -647,12 +642,12 @@ function MPB.TextBox:SetupEvents()
     self.TextBox.FocusLost:Connect(function(enterPressed)
         self.Focused = false
         local tween = CreateTween(self.TextBox, {
-            BackgroundColor3 = MPB.Theme.Dark
+            BackgroundColor3 = MPB.Config.Theme.Dark
         })
         tween:Play()
         
         local strokeTween = CreateTween(self.TextBox.UIStroke, {
-            Color = MPB.Theme.Border
+            Color = MPB.Config.Theme.Border
         })
         strokeTween:Play()
         
@@ -690,7 +685,7 @@ function MPB.Slider.new(tab, min, max, value, position, size, callback)
     self.Track.Name = "SliderTrack"
     self.Track.Size = UDim2.new(1, 0, 0, 4)
     self.Track.Position = UDim2.new(0, 0, 0.5, -2)
-    self.Track.BackgroundColor3 = MPB.Theme.Dark
+    self.Track.BackgroundColor3 = MPB.Config.Theme.Dark
     self.Track.BorderSizePixel = 0
     self.Track.Parent = self.Container
     
@@ -698,7 +693,7 @@ function MPB.Slider.new(tab, min, max, value, position, size, callback)
     self.Fill = Instance.new("Frame")
     self.Fill.Name = "SliderFill"
     self.Fill.Size = UDim2.new(0.5, 0, 1, 0)
-    self.Fill.BackgroundColor3 = MPB.Theme.Primary
+    self.Fill.BackgroundColor3 = MPB.Config.Theme.Primary
     self.Fill.BorderSizePixel = 0
     self.Fill.Parent = self.Track
     
@@ -707,7 +702,7 @@ function MPB.Slider.new(tab, min, max, value, position, size, callback)
     self.Thumb.Name = "SliderThumb"
     self.Thumb.Size = UDim2.new(0, 16, 0, 16)
     self.Thumb.Position = UDim2.new(0.5, -8, 0.5, -8)
-    self.Thumb.BackgroundColor3 = MPB.Theme.White
+    self.Thumb.BackgroundColor3 = MPB.Config.Theme.White
     self.Thumb.BorderSizePixel = 0
     self.Thumb.Parent = self.Container
     
@@ -720,9 +715,9 @@ function MPB.Slider.new(tab, min, max, value, position, size, callback)
     self.ValueLabel.Text = tostring(self.Value)
     self.ValueLabel.Font = Enum.Font.GothamBold
     self.ValueLabel.TextSize = 14
-    self.ValueLabel.TextColor3 = MPB.Theme.Text
+    self.ValueLabel.TextColor3 = MPB.Config.Theme.Text
     self.ValueLabel.TextStrokeTransparency = 0.3
-    self.ValueLabel.TextStrokeColor3 = MPB.Theme.Highlight
+    self.ValueLabel.TextStrokeColor3 = MPB.Config.Theme.Highlight
     self.ValueLabel.Parent = self.Container
     
     -- Setup events
@@ -810,9 +805,9 @@ function MPB.Toggle.new(tab, text, defaultValue, position, callback)
     self.Label.Text = self.Text
     self.Label.Font = Enum.Font.Gotham
     self.Label.TextSize = 14
-    self.Label.TextColor3 = MPB.Theme.Text
+    self.Label.TextColor3 = MPB.Config.Theme.Text
     self.Label.TextStrokeTransparency = 0.3
-    self.Label.TextStrokeColor3 = MPB.Theme.Highlight
+    self.Label.TextStrokeColor3 = MPB.Config.Theme.Highlight
     self.Label.Parent = self.Container
     
     -- Create toggle button
@@ -820,7 +815,7 @@ function MPB.Toggle.new(tab, text, defaultValue, position, callback)
     self.ToggleButton.Name = "ToggleButton"
     self.ToggleButton.Size = UDim2.new(0, 40, 0, 20)
     self.ToggleButton.Position = UDim2.new(0.7, 10, 0.5, -10)
-    self.ToggleButton.BackgroundColor3 = self.Value and MPB.Theme.Primary or MPB.Theme.Dark
+    self.ToggleButton.BackgroundColor3 = self.Value and MPB.Config.Theme.Primary or MPB.Config.Theme.Dark
     self.ToggleButton.BorderSizePixel = 0
     self.ToggleButton.Parent = self.Container
     
@@ -829,7 +824,7 @@ function MPB.Toggle.new(tab, text, defaultValue, position, callback)
     self.Knob.Name = "ToggleKnob"
     self.Knob.Size = UDim2.new(0, 16, 0, 16)
     self.Knob.Position = UDim2.new(self.Value and 1 or 0, -8, 0.5, -8)
-    self.Knob.BackgroundColor3 = MPB.Theme.White
+    self.Knob.BackgroundColor3 = MPB.Config.Theme.White
     self.Knob.BorderSizePixel = 0
     self.Knob.Parent = self.ToggleButton
     
@@ -857,7 +852,7 @@ function MPB.Toggle:Toggle()
     self.Value = not self.Value
     
     -- Animate toggle button
-    local targetColor = self.Value and MPB.Theme.Primary or MPB.Theme.Dark
+    local targetColor = self.Value and MPB.Config.Theme.Primary or MPB.Config.Theme.Dark
     local targetPosition = self.Value and UDim2.new(1, -8, 0.5, -8) or UDim2.new(0, -8, 0.5, -8)
     
     local colorTween = CreateTween(self.ToggleButton, {
@@ -902,14 +897,14 @@ function MPB.Dropdown.new(tab, options, defaultValue, position, size, callback)
     self.Button = Instance.new("TextButton")
     self.Button.Name = "DropdownButton"
     self.Button.Size = UDim2.new(1, 0, 1, 0)
-    self.Button.BackgroundColor3 = MPB.Theme.Dark
+    self.Button.BackgroundColor3 = MPB.Config.Theme.Dark
     self.Button.BorderSizePixel = 0
     self.Button.Text = self.Options[self.Value]
     self.Button.Font = Enum.Font.Gotham
     self.Button.TextSize = 14
-    self.Button.TextColor3 = MPB.Theme.Text
+    self.Button.TextColor3 = MPB.Config.Theme.Text
     self.Button.TextStrokeTransparency = 0.3
-    self.Button.TextStrokeColor3 = MPB.Theme.Highlight
+    self.Button.TextStrokeColor3 = MPB.Config.Theme.Highlight
     self.Button.Parent = self.Container
     
     -- Create dropdown arrow
@@ -922,9 +917,9 @@ function MPB.Dropdown.new(tab, options, defaultValue, position, size, callback)
     self.Arrow.Text = "▼"
     self.Arrow.Font = Enum.Font.GothamBold
     self.Arrow.TextSize = 16
-    self.Arrow.TextColor3 = MPB.Theme.TextLight
+    self.Arrow.TextColor3 = MPB.Config.Theme.TextLight
     self.Arrow.TextStrokeTransparency = 0.5
-    self.Arrow.TextStrokeColor3 = MPB.Theme.Highlight
+    self.Arrow.TextStrokeColor3 = MPB.Config.Theme.Highlight
     self.Arrow.Parent = self.Button
     
     -- Create dropdown list
@@ -932,7 +927,7 @@ function MPB.Dropdown.new(tab, options, defaultValue, position, size, callback)
     self.List.Name = "DropdownList"
     self.List.Size = UDim2.new(1, 0, 0, #self.Options * 30)
     self.List.Position = UDim2.new(0, 0, 1, 0)
-    self.List.BackgroundColor3 = MPB.Theme.ElementBackground
+    self.List.BackgroundColor3 = MPB.Config.Theme.ElementBackground
     self.List.BorderSizePixel = 0
     self.List.Visible = false
     self.List.Parent = self.Container
@@ -944,27 +939,27 @@ function MPB.Dropdown.new(tab, options, defaultValue, position, size, callback)
         item.Name = "ListItem_" .. i
         item.Size = UDim2.new(1, 0, 0, 30)
         item.Position = UDim2.new(0, 0, 0, (i-1) * 30)
-        item.BackgroundColor3 = MPB.Theme.Dark
+        item.BackgroundColor3 = MPB.Config.Theme.Dark
         item.BorderSizePixel = 0
         item.Text = option
         item.Font = Enum.Font.Gotham
         item.TextSize = 14
-        item.TextColor3 = MPB.Theme.TextLight
+        item.TextColor3 = MPB.Config.Theme.TextLight
         item.TextStrokeTransparency = 0.5
-        item.TextStrokeColor3 = MPB.Theme.Highlight
+        item.TextStrokeColor3 = MPB.Config.Theme.Highlight
         item.Parent = self.List
         
         -- Setup item events
         item.MouseEnter:Connect(function()
             local tween = CreateTween(item, {
-                BackgroundColor3 = MPB.Theme.Primary
+                BackgroundColor3 = MPB.Config.Theme.Primary
             })
             tween:Play()
         end)
         
         item.MouseLeave:Connect(function()
             local tween = CreateTween(item, {
-                BackgroundColor3 = MPB.Theme.Dark
+                BackgroundColor3 = MPB.Config.Theme.Dark
             })
             tween:Play()
         end)
@@ -990,7 +985,7 @@ function MPB.Dropdown:SetupEvents()
     
     self.Button.MouseEnter:Connect(function()
         local tween = CreateTween(self.Button, {
-            BackgroundColor3 = MPB.Theme.Primary
+            BackgroundColor3 = MPB.Config.Theme.Primary
         })
         tween:Play()
     end)
@@ -998,7 +993,7 @@ function MPB.Dropdown:SetupEvents()
     self.Button.MouseLeave:Connect(function()
         if not self.Open then
             local tween = CreateTween(self.Button, {
-                BackgroundColor3 = MPB.Theme.Dark
+                BackgroundColor3 = MPB.Config.Theme.Dark
             })
             tween:Play()
         end
@@ -1042,7 +1037,7 @@ function MPB.Dropdown:SetValue(index)
     
     -- Update button color
     local tween = CreateTween(self.Button, {
-        BackgroundColor3 = MPB.Theme.Primary
+        BackgroundColor3 = MPB.Config.Theme.Primary
     })
     tween:Play()
     
@@ -1050,7 +1045,7 @@ function MPB.Dropdown:SetValue(index)
     
     if not self.Open then
         local tween2 = CreateTween(self.Button, {
-            BackgroundColor3 = MPB.Theme.Dark
+            BackgroundColor3 = MPB.Config.Theme.Dark
         })
         tween2:Play()
     end
@@ -1100,9 +1095,9 @@ function MPB.ColorPicker.new(tab, defaultValue, position, size, callback)
     self.Label.Text = "Color"
     self.Label.Font = Enum.Font.Gotham
     self.Label.TextSize = 14
-    self.Label.TextColor3 = MPB.Theme.Text
+    self.Label.TextColor3 = MPB.Config.Theme.Text
     self.Label.TextStrokeTransparency = 0.3
-    self.Label.TextStrokeColor3 = MPB.Theme.Highlight
+    self.Label.TextStrokeColor3 = MPB.Config.Theme.Highlight
     self.Label.Parent = self.Container
     
     -- Create color picker button
@@ -1111,14 +1106,14 @@ function MPB.ColorPicker.new(tab, defaultValue, position, size, callback)
     self.Button.Size = UDim2.new(0, 20, 0, 20)
     self.Button.Position = UDim2.new(1, -30, 0.5, -10)
     self.Button.AnchorPoint = Vector2.new(1, 0.5)
-    self.Button.BackgroundColor3 = MPB.Theme.Dark
+    self.Button.BackgroundColor3 = MPB.Config.Theme.Dark
     self.Button.BorderSizePixel = 0
     self.Button.Text = "▼"
     self.Button.Font = Enum.Font.GothamBold
     self.Button.TextSize = 16
-    self.Button.TextColor3 = MPB.Theme.TextLight
+    self.Button.TextColor3 = MPB.Config.Theme.TextLight
     self.Button.TextStrokeTransparency = 0.5
-    self.Button.TextStrokeColor3 = MPB.Theme.Highlight
+    self.Button.TextStrokeColor3 = MPB.Config.Theme.Highlight
     self.Button.Parent = self.Container
     
     -- Create color picker panel
@@ -1126,7 +1121,7 @@ function MPB.ColorPicker.new(tab, defaultValue, position, size, callback)
     self.Panel.Name = "ColorPickerPanel"
     self.Panel.Size = UDim2.new(0, 250, 0, 200)
     self.Panel.Position = UDim2.new(1, 10, 0, 0)
-    self.Panel.BackgroundColor3 = MPB.Theme.ElementBackground
+    self.Panel.BackgroundColor3 = MPB.Config.Theme.ElementBackground
     self.Panel.BorderSizePixel = 0
     self.Panel.Visible = false
     self.Panel.Parent = self.Container
@@ -1141,7 +1136,7 @@ function MPB.ColorPicker.new(tab, defaultValue, position, size, callback)
     self.ColorArea.Name = "ColorArea"
     self.ColorArea.Size = UDim2.new(1, -40, 1, -40)
     self.ColorArea.Position = UDim2.new(0, 40, 0, 20)
-    self.ColorArea.BackgroundColor3 = MPB.Theme.Dark
+    self.ColorArea.BackgroundColor3 = MPB.Config.Theme.Dark
     self.ColorArea.BorderSizePixel = 0
     self.ColorArea.Image = "rbxassetid://3572486092"
     self.ColorArea.ImageColor3 = Color3.new(1, 1, 1)
@@ -1151,9 +1146,9 @@ function MPB.ColorPicker.new(tab, defaultValue, position, size, callback)
     self.ColorCursor = Instance.new("Frame")
     self.ColorCursor.Name = "ColorCursor"
     self.ColorCursor.Size = UDim2.new(0, 10, 0, 10)
-    self.ColorCursor.BackgroundColor3 = MPB.Theme.White
+    self.ColorCursor.BackgroundColor3 = MPB.Config.Theme.White
     self.ColorCursor.BorderSizePixel = 2
-    self.ColorCursor.BorderColor3 = MPB.Theme.Black
+    self.ColorCursor.BorderColor3 = MPB.Config.Theme.Black
     self.ColorCursor.Parent = self.ColorArea
     
     -- Create hex input
@@ -1272,7 +1267,7 @@ function MPB.Notifications:Show(title, text, duration, type)
     notification.Name = "Notification"
     notification.Size = UDim2.new(0, 300, 0, 80)
     notification.Position = UDim2.new(1, -320, 0, 100)
-    notification.BackgroundColor3 = MPB.Theme.ElementBackground
+    notification.BackgroundColor3 = MPB.Config.Theme.ElementBackground
     notification.BorderSizePixel = 0
     notification.Parent = MPB.Library.ScreenGui
     
@@ -1288,9 +1283,9 @@ function MPB.Notifications:Show(title, text, duration, type)
     icon.TextSize = 24
     icon.TextColor3 = type == "success" and Color3.fromRGB(78, 205, 196) or 
                     type == "error" and Color3.fromRGB(255, 107, 107) or 
-                    MPB.Theme.Primary
+                    MPB.Config.Theme.Primary
     icon.TextStrokeTransparency = 0.3
-    icon.TextStrokeColor3 = MPB.Theme.Highlight
+    icon.TextStrokeColor3 = MPB.Config.Theme.Highlight
     icon.Parent = notification
     
     -- Notification title
@@ -1302,9 +1297,9 @@ function MPB.Notifications:Show(title, text, duration, type)
     titleText.Text = title or "Notification"
     titleText.Font = Enum.Font.GothamBold
     titleText.TextSize = 14
-    titleText.TextColor3 = MPB.Theme.Text
+    titleText.TextColor3 = MPB.Config.Theme.Text
     titleText.TextStrokeTransparency = 0.3
-    titleText.TextStrokeColor3 = MPB.Theme.Highlight
+    titleText.TextStrokeColor3 = MPB.Config.Theme.Highlight
     titleText.Parent = notification
     
     -- Notification text
@@ -1316,9 +1311,9 @@ function MPB.Notifications:Show(title, text, duration, type)
     textLabel.Text = text or "This is a notification"
     textLabel.Font = Enum.Font.Gotham
     textLabel.TextSize = 12
-    textLabel.TextColor3 = MPB.Theme.TextLight
+    textLabel.TextColor3 = MPB.Config.Theme.TextLight
     textLabel.TextStrokeTransparency = 0.5
-    textLabel.TextStrokeColor3 = MPB.Theme.Highlight
+    textLabel.TextStrokeColor3 = MPB.Config.Theme.Highlight
     textLabel.TextWrapped = true
     textLabel.Parent = notification
     
