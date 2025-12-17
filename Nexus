@@ -1,10 +1,9 @@
--- Fixed NexusUI Library - Proper Drawing API mouse handling (No nil Connect errors)
+-- Fixed NexusUI Library - Proper manual input handling for Drawing API
 local NexusUI = {}
 local UIS = game:GetService("UserInputService")
 local RS = game:GetService("RunService")
 
 local Drawings = {}
-
 local function New(class, props)
     local obj = Drawing.new(class)
     for k, v in pairs(props or {}) do
@@ -14,23 +13,18 @@ local function New(class, props)
     return obj
 end
 
--- Mouse utils
-local MousePos = Vector2.new(0, 0)
-local MouseDown = false
-UIS.InputChanged:Connect(function(input)
-    if input.UserInputType == Enum.UserInputType.MouseMovement then
-        MousePos = Vector2.new(input.Position.X, input.Position.Y)
+-- Mouse state
+local Mouse = {Pos = Vector2.new(0,0), Down = false, ClickHandled = false}
+UIS.InputChanged:Connect(function(i)
+    if i.UserInputType == Enum.UserInputType.MouseMovement then
+        Mouse.Pos = Vector2.new(i.Position.X, i.Position.Y)
     end
 end)
-UIS.InputBegan:Connect(function(input)
-    if input.UserInputType == Enum.UserInputType.MouseButton1 then MouseDown = true end
-end)
-UIS.InputEnded:Connect(function(input)
-    if input.UserInputType == Enum.UserInputType.MouseButton1 then MouseDown = false end
-end)
+UIS.InputBegan:Connect(function(i) if i.UserInputType == Enum.UserInputType.MouseButton1 then Mouse.Down = true end end)
+UIS.InputEnded:Connect(function(i) if i.UserInputType == Enum.UserInputType.MouseButton1 then Mouse.Down = false; Mouse.ClickHandled = false end end)
 
-local function IsMouseOver(pos, size)
-    return MousePos.X >= pos.X and MousePos.X <= pos.X + size.X and MousePos.Y >= pos.Y and MousePos.Y <= pos.Y + size.Y
+local function InBounds(pos, size)
+    return Mouse.Pos.X >= pos.X and Mouse.Pos.X <= pos.X + size.X and Mouse.Pos.Y >= pos.Y and Mouse.Pos.Y <= pos.Y + size.Y
 end
 
 function NexusUI:Create(options)
@@ -42,53 +36,48 @@ function NexusUI:Create(options)
         Tabs = {},
         CurrentTab = nil,
         Dragging = false,
-        DragStart = Vector2.new()
+        DragOffset = Vector2.new(0,0)
     }
 
-    -- Main elements
     local Main = New("Square", {Filled = true, Color = Color3.fromRGB(25, 25, 35), Size = Window.Size, Position = Window.Position, Transparency = 0.95})
+    local Outline = New("Square", {Filled = false, Color = Color3.fromRGB(60, 60, 80), Size = Window.Size + Vector2.new(2,2), Position = Window.Position - Vector2.new(1,1), Thickness = 2})
     local TitleBar = New("Square", {Filled = true, Color = Color3.fromRGB(20, 20, 30), Size = Vector2.new(Window.Size.X, 40), Position = Window.Position})
-    local TitleText = New("Text", {Text = Window.Name, Size = 20, Position = Window.Position + Vector2.new(15, 10), Color = Color3.fromRGB(230, 230, 255), Outline = true})
+    local TitleText = New("Text", {Text = Window.Name, Size = 20, Position = Window.Position + Vector2.new(15, 10), Color = Color3.fromRGB(230, 230, 255), Outline = true, Font = 2})
 
-    -- Dragging + Clicking logic in loop
+    -- Dragging
     RS.RenderStepped:Connect(function()
-        -- Dragging
-        if MouseDown and IsMouseOver(TitleBar.Position, TitleBar.Size) and not Window.Dragging then
+        if Mouse.Down and InBounds(TitleBar.Position, TitleBar.Size) and not Window.Dragging then
             Window.Dragging = true
-            Window.DragStart = MousePos - Window.Position
+            Window.DragOffset = Mouse.Pos - Window.Position
         end
         if Window.Dragging then
-            Window.Position = MousePos - Window.DragStart
+            Window.Position = Mouse.Pos - Window.DragOffset
             Main.Position = Window.Position
+            Outline.Position = Window.Position - Vector2.new(1,1)
             TitleBar.Position = Window.Position
             TitleText.Position = Window.Position + Vector2.new(15, 10)
-            -- Update other elements here
+            -- Update tab/element positions in full version
         end
-        if not MouseDown then
-            Window.Dragging = false
-        end
+        if not Mouse.Down then Window.Dragging = false end
     end)
 
     function Window:NewTab(name)
         local tabIndex = #Window.Tabs + 1
-        local tabBtnPos = Window.Position + Vector2.new(10 + (tabIndex - 1) * 130, 45)
-        local TabBtn = New("Square", {Filled = true, Color = Color3.fromRGB(35, 35, 50), Size = Vector2.new(120, 35), Position = tabBtnPos})
-        local TabText = New("Text", {Text = name, Size = 16, Center = true, Position = tabBtnPos + Vector2.new(60, 8), Color = Color3.fromRGB(180, 180, 200)})
+        local btnPos = Window.Position + Vector2.new(10 + (tabIndex-1)*130, 45)
+        local TabBtn = New("Square", {Filled = true, Color = Color3.fromRGB(35, 35, 50), Size = Vector2.new(120, 35), Position = btnPos})
+        local TabText = New("Text", {Text = name, Size = 16, Center = true, Position = btnPos + Vector2.new(60, 8), Color = Color3.fromRGB(180, 180, 200)})
 
         local Tab = {Elements = {}}
 
-        TabBtn.ClickCallback = function() Window.CurrentTab = Tab end  -- Set active tab
-
-        -- Manual click detection for tab
+        -- Tab click
         RS.RenderStepped:Connect(function()
-            if MouseDown and IsMouseOver(TabBtn.Position, TabBtn.Size) and not Window.ClickHandled then
-                Window.ClickHandled = true
-                if TabBtn.ClickCallback then TabBtn.ClickCallback() end
+            if Mouse.Down and InBounds(TabBtn.Position, TabBtn.Size) and not Mouse.ClickHandled then
+                Mouse.ClickHandled = true
+                Window.CurrentTab = Tab
+                -- Add active tab highlight if wanted
             end
-            if not MouseDown then Window.ClickHandled = false end
         end)
 
-        -- Similar for Toggle/Button inside tab...
         function Tab:Toggle(opts)
             local y = 80 + #Tab.Elements * 50
             local state = opts.Default or false
@@ -97,7 +86,8 @@ function NexusUI:Create(options)
             local label = New("Text", {Text = opts.Name, Position = Window.Position + Vector2.new(20, y-5), Color = Color3.fromRGB(220, 220, 220), Size = 15})
 
             RS.RenderStepped:Connect(function()
-                if MouseDown and IsMouseOver(toggle.Position, toggle.Size) then
+                if Mouse.Down and InBounds(toggle.Position, toggle.Size) and not Mouse.ClickHandled then
+                    Mouse.ClickHandled = true
                     state = not state
                     toggle.Color = state and Color3.fromRGB(80, 180, 255) or Color3.fromRGB(60, 60, 70)
                     if opts.Callback then opts.Callback(state) end
@@ -105,7 +95,25 @@ function NexusUI:Create(options)
             end)
         end
 
-        -- Add Button similarly with manual detection
+        function Tab:Button(opts)
+            local y = 80 + #Tab.Elements * 50
+            local btnPos = Window.Position + Vector2.new(20, y)
+            local btn = New("Square", {Filled = true, Color = Color3.fromRGB(50, 120, 200), Size = Vector2.new(Window.Size.X - 40, 35), Position = btnPos})
+            local btnText = New("Text", {Text = opts.Name, Center = true, Position = btnPos + Vector2.new((Window.Size.X - 40)/2, 8), Color = Color3.white, Size = 16})
+
+            -- Hover effect
+            RS.RenderStepped:Connect(function()
+                if InBounds(btn.Position, btn.Size) then
+                    btn.Color = Color3.fromRGB(70, 140, 220)
+                else
+                    btn.Color = Color3.fromRGB(50, 120, 200)
+                end
+                if Mouse.Down and InBounds(btn.Position, btn.Size) and not Mouse.ClickHandled then
+                    Mouse.ClickHandled = true
+                    if opts.Callback then opts.Callback() end
+                end
+            end)
+        end
 
         table.insert(Window.Tabs, Tab)
         return Tab
