@@ -7,6 +7,10 @@
 local MPB = {}
 MPB.__index = MPB
 
+-- Get required services
+local UserInputService = game:GetService("UserInputService")
+local TweenService = game:GetService("TweenService")
+
 -- Configuration
 MPB.Config = {
     Theme = {
@@ -97,7 +101,7 @@ local function Round(num, numDecimalPlaces)
 end
 
 local function CreateTween(instance, properties, duration, easingStyle, easingDirection)
-    return game:GetService("TweenService"):Create(instance, TweenInfo.new(duration or MPB.Config.Animation.Duration, 
+    return TweenService:Create(instance, TweenInfo.new(duration or MPB.Config.Animation.Duration, 
         easingStyle or MPB.Config.Animation.EasingStyle, 
         easingDirection or MPB.Config.Animation.EasingDirection), properties)
 end
