@@ -1,15 +1,15 @@
 --[[
-    MPB Executor GUI Library - Fixed Version
+    MPB Executor GUI Library - Robust Version
     Designed for Roblox Script Executors
 ]]
-
--- Core Library
-local MPB = {}
-MPB.__index = MPB
 
 -- Get required services
 local UserInputService = game:GetService("UserInputService")
 local TweenService = game:GetService("TweenService")
+
+-- Core Library
+local MPB = {}
+MPB.__index = MPB
 
 -- Configuration
 MPB.Config = {
