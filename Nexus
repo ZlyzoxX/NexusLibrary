@@ -1,8 +1,6 @@
 --[[
-    MPB Executor GUI Library
+    MPB Executor GUI Library - Fixed Version
     Designed for Roblox Script Executors
-    Modern Purple Black Theme with Animations
-    Total: ~1200 lines of code
 ]]
 
 -- Core Library
